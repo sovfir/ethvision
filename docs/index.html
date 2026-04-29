@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EthVision - Ethereum Network Vision</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 360 / 640;
+            max-height: 100vh;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        .status {
+            position: fixed;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #0f0;
+            font-size: 10px;
+            font-family: monospace;
+            background: rgba(0,0,0,0.7);
+            padding: 2px;
+            z-index: 100;
+        }
+        
+        @media (max-width: 600px) {
+            .status {
+                font-size: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="status" id="status">Loading EthVision...</div>
+
+    <script src="wasm_exec.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const go = new Go();
+        
+        // Настройка для мобильных устройств
+        let instantiating = false;
+        
+        async function loadWasm() {
+            if (instantiating) return;
+            instantiating = true;
+            
+            try {
+                statusDiv.textContent = "Loading WASM module...";
+                statusDiv.style.color = "#ffaa00";
+                
+                const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject);
+                
+                statusDiv.textContent = "Starting EthVision...";
+                statusDiv.style.color = "#00ff00";
+                
+                await go.run(result.instance);
+                
+                statusDiv.textContent = "EthVision Running | Tap to update data";
+                statusDiv.style.color = "#00ff00";
+                
+            } catch (err) {
+                console.error("WASM Error:", err);
+                statusDiv.textContent = "Error: " + err.message;
+                statusDiv.style.color = "#ff0000";
+            } finally {
+                instantiating = false;
+            }
+        }
+        
+        // Запускаем загрузку
+        loadWasm();
+        
+        // Обработка ошибок
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e);
+            statusDiv.textContent = "Error: " + (e.message || 'Unknown');
+            statusDiv.style.color = "#ff0000";
+        });
+    </script>
+</body>
+</html>
