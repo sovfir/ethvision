@@ -2,7 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>EthVision - Ethereum Network Vision</title>
     <style>
         * {
@@ -11,6 +13,7 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         body {
@@ -21,6 +24,10 @@
             align-items: center;
             font-family: 'Courier New', monospace;
             touch-action: manipulation;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
 
         canvas {
@@ -32,6 +39,7 @@
             max-height: 100vh;
             object-fit: contain;
             cursor: pointer;
+            touch-action: manipulation;
         }
 
         .status {
@@ -46,6 +54,7 @@
             background: rgba(0,0,0,0.7);
             padding: 2px;
             z-index: 100;
+            pointer-events: none;
         }
         
         @media (max-width: 600px) {
@@ -63,7 +72,6 @@
         const statusDiv = document.getElementById('status');
         const go = new Go();
         
-        // Настройка для мобильных устройств
         let instantiating = false;
         
         async function loadWasm() {
@@ -76,12 +84,11 @@
                 
                 const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject);
                 
-                statusDiv.textContent = "Starting EthVision...";
-                statusDiv.style.color = "#00ff00";
+       
                 
                 await go.run(result.instance);
                 
-                statusDiv.textContent = "EthVision Running | Tap to update data";
+                statusDiv.textContent = "✓ Tap to update data";
                 statusDiv.style.color = "#00ff00";
                 
             } catch (err) {
@@ -102,6 +109,13 @@
             statusDiv.textContent = "Error: " + (e.message || 'Unknown');
             statusDiv.style.color = "#ff0000";
         });
+        
+        // Предотвращаем скролл при касании canvas
+        document.addEventListener('touchmove', function(e) {
+            if (e.target === document.querySelector('canvas')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
