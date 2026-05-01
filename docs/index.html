@@ -3,22 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <!-- ЗАПРЕЩАЕМ ПОВОРОТ ЭКРАНА -->
     <meta name="screen-orientation" content="portrait">
     <meta name="orientation" content="portrait-primary">
-    
-    <!-- Для iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>EthVision</title>
     
-    <title>EthVision - Ethereum Network Vision</title>
-    
-    <!-- Favicon - биржевой график (свечной) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1a2e'/><rect x='10' y='70' width='15' height='20' fill='%2350c850'/><rect x='28' y='50' width='15' height='40' fill='%23c85050'/><rect x='46' y='30' width='15' height='60' fill='%2350c850'/><rect x='64' y='55' width='15' height='35' fill='%23c85050'/><rect x='82' y='20' width='15' height='70' fill='%2350c850'/><line x1='10' y1='85' x2='97' y2='85' stroke='%23f0c050' stroke-width='2'/></svg>">
-    
-    <!-- Альтернативный favicon для всех устройств -->
-    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231a1a2e'/%3E%3Crect x='3' y='22' width='5' height='7' fill='%2350c850'/%3E%3Crect x='10' y='16' width='5' height='13' fill='%23c85050'/%3E%3Crect x='17' y='10' width='5' height='19' fill='%2350c850'/%3E%3Crect x='24' y='18' width='5' height='11' fill='%23c85050'/%3E%3Cline x1='3' y1='27' x2='29' y2='27' stroke='%23f0c050' stroke-width='1.5'/%3E%3C/svg%3E">
     
     <style>
         * {
@@ -32,16 +24,13 @@
 
         body {
             background: #000000;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Courier New', monospace;
-            touch-action: manipulation;
             position: fixed;
             width: 100%;
             height: 100%;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         canvas {
@@ -53,99 +42,35 @@
             max-height: 100vh;
             object-fit: contain;
             cursor: pointer;
-            touch-action: manipulation;
         }
 
         .status {
-            position: fixed;
-            bottom: 5px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #0f0;
-            font-size: 10px;
-            font-family: monospace;
-            background: rgba(0,0,0,0.7);
-            padding: 2px;
-            z-index: 100;
-            pointer-events: none;
-        }
-        
-        @media (max-width: 600px) {
-            .status {
-                font-size: 8px;
-            }
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="status" id="status">Loading EthVision...</div>
-
+    <canvas id="gameCanvas"></canvas>
+    
     <script src="wasm_exec.js"></script>
     <script>
-        const statusDiv = document.getElementById('status');
         const go = new Go();
         
-        let instantiating = false;
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then(async (result) => {
+            await go.run(result.instance);
+        }).catch((err) => {
+            console.error(err);
+            document.body.innerHTML = '<div style="color:red;text-align:center;margin-top:50px;">Error loading app</div>';
+        });
         
-        // Блокировка поворота через JS
+        // Блокировка поворота
         function lockOrientation() {
             if (screen.orientation && screen.orientation.lock) {
-                screen.orientation.lock('portrait').catch(e => console.log('Orientation lock not supported'));
+                screen.orientation.lock('portrait').catch(e => console.log('not supported'));
             }
         }
-        
-        async function loadWasm() {
-            if (instantiating) return;
-            instantiating = true;
-            
-            try {
-                statusDiv.textContent = "Loading WASM module...";
-                statusDiv.style.color = "#ffaa00";
-                
-                const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject);
-                
-                statusDiv.textContent = "Starting EthVision...";
-                statusDiv.style.color = "#00ff00";
-                
-                await go.run(result.instance);
-                
-                statusDiv.textContent = "✓ Tap to update data";
-                statusDiv.style.color = "#00ff00";
-                
-                lockOrientation();
-                
-            } catch (err) {
-                console.error("WASM Error:", err);
-                statusDiv.textContent = "Error: " + err.message;
-                statusDiv.style.color = "#ff0000";
-            } finally {
-                instantiating = false;
-            }
-        }
-        
-        loadWasm();
-        
-        window.addEventListener('orientationchange', function() {
-            lockOrientation();
-            setTimeout(lockOrientation, 100);
-        });
-        
-        window.addEventListener('resize', function() {
-            lockOrientation();
-        });
-        
-        window.addEventListener('error', function(e) {
-            console.error('Global error:', e);
-            statusDiv.textContent = "Error: " + (e.message || 'Unknown');
-            statusDiv.style.color = "#ff0000";
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (e.target === document.querySelector('canvas')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        lockOrientation();
+        window.addEventListener('orientationchange', lockOrientation);
     </script>
 </body>
 </html>
