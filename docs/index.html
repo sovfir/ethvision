@@ -79,7 +79,6 @@
             instantiating = true;
             
             try {
-                statusDiv.textContent = "Loading WASM module...";
                 statusDiv.style.color = "#ffaa00";
                 
                 const result = await WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject);
