@@ -17,19 +17,11 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
 
         body {
             background: #000000;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -37,16 +29,11 @@
 
         canvas {
             display: block;
-            margin: 0 auto;
-            width: auto;
-            height: 100%;
+            width: 100%;
+            height: auto;
+            max-width: 360px;
             aspect-ratio: 360 / 640;
-            max-width: 100%;
             cursor: pointer;
-        }
-
-        .status {
-            display: none;
         }
     </style>
 </head>
@@ -61,7 +48,6 @@
             await go.run(result.instance);
         }).catch((err) => {
             console.error(err);
-            document.body.innerHTML = '<div style="color:red;text-align:center;margin-top:50px;">Error loading app</div>';
         });
         
         // Блокировка поворота
